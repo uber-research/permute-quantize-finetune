@@ -1,0 +1,31 @@
+dataloader:
+  imagenet_path: <your_imagenet_path_here>
+  num_workers: 20
+  batch_size: 64
+  train_shuffle: True
+  validation_shuffle: False
+
+model:
+  arch: resnet18
+
+  compression_parameters:
+    ignored_modules:
+      # list of layer names that you do not want to compress
+      - conv1
+
+    # Used to overwrite configs
+    layer_specs:
+      fc:
+        k: 2048
+        k_means_type: kmeans
+
+    k: 256
+    fc_subvector_size: 4 # d_fc
+    pw_subvector_size: 4 # d_pw
+    # Small or large block compression regime for convolutional layers
+    large_subvectors: False
+    k_means_type: kmeans
+    k_means_n_iters: 1
+
+  # path to compressed model as initialization
+  state_dict_compressed: ../compressed_models/resnet18.pth

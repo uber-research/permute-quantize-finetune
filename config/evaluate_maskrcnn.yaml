@@ -1,0 +1,37 @@
+dataloader:
+  coco_path: <your_coco_path_here>
+  batch_size: 2
+  num_workers: 4
+
+model:
+  arch: maskrcnn
+
+  compression_parameters:
+    k: 256
+    fc_subvector_size: 4 # d_fc
+    pw_subvector_size: 4 # d_pw
+    # Small or large block compression regime for convolutional layers
+    large_subvectors: False
+    k_means_type: src
+    k_means_n_iters: 1
+
+    # Allows special parameters for some layers; used to replicate bit allocation of BGD paper
+    layer_specs:
+      backbone.body.layers.layer1.0.conv1:
+        k: 128
+      backbone.body.layer1.0.conv1:
+        k: 128
+      roi_heads.box_head.fc6:
+        subvector_size: 16
+
+    # NOTE: backbone.body.conv1 and backbone.body.layers.conv1 are the same layer, just named differently depending
+    # on different torchvision versions
+    ignored_modules:
+      - backbone.body.conv1
+      - backbone.body.layers.conv1
+      - rpn.head.cls_logits
+      - rpn.head.bbox_pred
+      - roi_heads.mask_predictor.mask_fcn_logits
+
+  # path to compressed model as initialization
+  state_dict_compressed: ../compressed_models/mask_rcnn.pth

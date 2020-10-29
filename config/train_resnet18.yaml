@@ -1,0 +1,122 @@
+dataloader:
+  # imagenet_path: <your_imagenet_path_here>
+  imagenet_path: <your_imagenet_path_here>
+  num_workers: 20
+  batch_size: 128
+  train_shuffle: True
+  validation_shuffle: False
+
+# training hyperparams
+epochs: 9
+learning_rate: 0.001
+momentum: 0.9
+weight_decay: 0.0001 # 1e-4
+
+optimizer: adam # must be either sgd or adam
+
+# lr scheduling
+lr_scheduler:
+  type: cosine
+  min_lr: 1.e-6
+
+skip_initial_validation: False
+output_path: <your_output_path_here>
+
+# model architecture
+model:
+  arch: resnet18
+
+  compression_parameters:
+    ignored_modules:
+      # list of layer names that you do not want to compress.
+      # We follow Stock et al. "And the bit goes down: revisiting the quantization of deep neural networks", ICLR 2020
+      # and do not compress the first 7x7 convolutional layer, as it represents only 0.1-0.05% of the network weights
+      - conv1
+
+    k: 256
+    fc_subvector_size: 4 # d_fc
+    pw_subvector_size: 4 # d_pw
+    # Small or large block compression regime for convolutional layers
+    large_subvectors: False
+    k_means_type: src # kmeans, kmedians, src, slow_src
+    k_means_n_iters: 10
+
+    # Used to overwrite configs
+    layer_specs:
+      fc:
+        k: 2048 # Same as BGD
+        k_means_type: src
+
+  use_permutations: True
+  sls_iterations: 10_000
+
+  permutations:   # parent-children relationships for permutation optimization
+    -
+      - parents: [layer1.0.conv1, layer1.0.bn1]
+      - children: [layer1.0.conv2]
+    -
+      - parents: [layer1.1.conv1, layer1.1.bn1]
+      - children: [layer1.1.conv2]
+    -
+      - parents: [layer2.0.conv1, layer2.0.bn1]
+      - children: [layer2.0.conv2]
+    -
+      - parents: [layer2.1.conv1, layer2.1.bn1]
+      - children: [layer2.1.conv2]
+    -
+      - parents: [layer3.0.conv1, layer3.0.bn1]
+      - children: [layer3.0.conv2]
+    -
+      - parents: [layer3.1.conv1, layer3.1.bn1]
+      - children: [layer3.1.conv2]
+    -
+      - parents: [layer4.0.conv1, layer4.0.bn1]
+      - children: [layer4.0.conv2]
+    -
+      - parents: [layer4.1.conv1, layer4.1.bn1]
+      - children: [layer4.1.conv2]
+    -
+      - parents: [
+          conv1, bn1,
+          layer1.0.conv2, layer1.0.bn2,
+          layer1.1.conv2, layer1.1.bn2,
+        ]
+      - children: [
+          layer1.0.conv1,
+          layer1.1.conv1,
+          layer2.0.conv1,
+          layer2.0.downsample.0,
+        ]
+    -
+      - parents: [
+          layer2.0.downsample.0, layer2.0.downsample.1,
+          layer2.0.conv2, layer2.0.bn2,
+          layer2.1.conv2, layer2.1.bn2,
+        ]
+      - children: [
+          layer2.1.conv1,
+          layer3.0.conv1,
+          layer3.0.downsample.0,
+        ]
+    -
+      - parents: [
+          layer3.0.downsample.0, layer3.0.downsample.1,
+          layer3.0.conv2, layer3.0.bn2,
+          layer3.1.conv2, layer3.1.bn2,
+        ]
+      - children: [
+          layer3.1.conv1,
+          layer4.0.conv1,
+          layer4.0.downsample.0,
+        ]
+    -
+      - parents: [
+          layer4.0.downsample.0, layer4.0.downsample.1,
+          layer4.0.conv2, layer4.0.bn2,
+          layer4.1.conv2, layer4.1.bn2,
+        ]
+      - children: [
+          layer4.1.conv1,
+          fc,
+        ]
+

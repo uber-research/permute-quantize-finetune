@@ -1,0 +1,274 @@
+dataloader:
+  coco_path: <your_coco_path_here>
+  batch_size: 2
+  num_workers: 4
+
+# training
+epochs: 4
+learning_rate: 0.00005
+momentum: 0.9
+weight_decay: 0.0001
+
+optimizer: adam # must be either sgd or adam
+
+lr_scheduler:
+  type: cosine # currently support either plateau or none or cosine annealing or multisteps
+  min_lr: 1.0e-6
+
+skip_initial_validation: False
+output_path: <your_output_path_here>
+
+# k means
+model:
+  arch: maskrcnn
+
+  compression_parameters:
+    k: 256
+    fc_subvector_size: 4 # d_fc
+    pw_subvector_size: 4 # d_pw
+    # Small or large block compression regime for convolutional layers
+    large_subvectors: False
+    k_means_type: src
+    k_means_n_iters: 1_000
+
+    # allow special parameters for some layers; used to replicate FAIR paper
+    layer_specs:
+      backbone.body.layers.layer1.0.conv1:
+        k: 128
+      backbone.body.layer1.0.conv1:
+        k: 128
+      roi_heads.box_head.fc6:
+        subvector_size: 16
+
+    # NOTE: backbone.body.conv1 and backbone.body.layers.conv1 are the same layer, just named differently depending
+    # on different torchvision versions
+    ignored_modules:
+      - backbone.body.conv1
+      - backbone.body.layers.conv1
+      - rpn.head.cls_logits
+      - rpn.head.bbox_pred
+      - roi_heads.mask_predictor.mask_fcn_logits
+
+  use_permutations: True
+  sls_iterations: 1_000
+
+  permutations:   # parent-children relationships for permutation optimization
+    -
+      - parents: [backbone.body.conv1, backbone.body.bn1]
+      - children: [
+          backbone.body.layer1.0.conv1,
+          backbone.body.layer1.0.downsample.0
+        ]
+    -
+      - parents:  [backbone.body.layer1.0.conv1, backbone.body.layer1.0.bn1]  # conv 3x3
+      - children: [backbone.body.layer1.0.conv2]  # conv 3x3
+    -
+      - parents:  [backbone.body.layer1.0.conv2, backbone.body.layer1.0.bn2]  # conv 3x3
+      - children: [backbone.body.layer1.0.conv3]  # conv 1x1
+    -
+      - parents: [
+        backbone.body.layer1.0.conv3, backbone.body.layer1.0.bn3,
+        backbone.body.layer1.0.downsample.0, backbone.body.layer1.0.downsample.1,
+        backbone.body.layer1.1.conv3, backbone.body.layer1.1.bn3,
+        backbone.body.layer1.2.conv3, backbone.body.layer1.2.bn3,
+      ]
+      - children: [
+          backbone.body.layer1.1.conv1,
+          backbone.body.layer1.2.conv1,
+          backbone.body.layer2.0.conv1,
+          backbone.body.layer2.0.downsample.0,
+          backbone.fpn.inner_blocks.0,
+        ]
+    -
+      - parents:  [backbone.body.layer1.1.conv1, backbone.body.layer1.1.bn1]  # conv 3x3
+      - children: [backbone.body.layer1.1.conv2]  # conv 3x3
+    -
+      - parents:  [backbone.body.layer1.1.conv2, backbone.body.layer1.1.bn2]
+      - children: [backbone.body.layer1.1.conv3]
+    -
+      - parents:  [backbone.body.layer1.2.conv1, backbone.body.layer1.2.bn1]
+      - children: [backbone.body.layer1.2.conv2]
+    -
+      - parents:  [backbone.body.layer1.2.conv2, backbone.body.layer1.2.bn2]
+      - children: [backbone.body.layer1.2.conv3]
+    -
+      - parents:  [backbone.body.layer2.0.conv1, backbone.body.layer2.0.bn1]
+      - children: [backbone.body.layer2.0.conv2]
+    -
+      - parents:  [backbone.body.layer2.0.conv2, backbone.body.layer2.0.bn2]
+      - children: [backbone.body.layer2.0.conv3]
+    -
+      - parents: [
+          backbone.body.layer2.0.conv3, backbone.body.layer2.0.bn3,
+          backbone.body.layer2.0.downsample.0, backbone.body.layer2.0.downsample.1,
+          backbone.body.layer2.1.conv3, backbone.body.layer2.1.bn3,
+          backbone.body.layer2.2.conv3, backbone.body.layer2.2.bn3,
+          backbone.body.layer2.3.conv3, backbone.body.layer2.3.bn3,
+        ]
+      - children: [
+          backbone.body.layer2.1.conv1,
+          backbone.body.layer2.2.conv1,
+          backbone.body.layer2.3.conv1,
+          backbone.body.layer3.0.conv1,
+          backbone.body.layer3.0.downsample.0,
+          backbone.fpn.inner_blocks.1,
+        ]
+    -
+      - parents:  [backbone.body.layer2.1.conv1, backbone.body.layer2.1.bn1]
+      - children: [backbone.body.layer2.1.conv2]
+    -
+      - parents:  [backbone.body.layer2.1.conv2, backbone.body.layer2.1.bn2]
+      - children: [backbone.body.layer2.1.conv3]
+    -
+      - parents:  [backbone.body.layer2.2.conv1, backbone.body.layer2.2.bn1]
+      - children: [backbone.body.layer2.2.conv2]
+    -
+      - parents:  [backbone.body.layer2.2.conv2, backbone.body.layer2.2.bn2]
+      - children: [backbone.body.layer2.2.conv3]
+    -
+      - parents:  [backbone.body.layer2.3.conv1, backbone.body.layer2.3.bn1]
+      - children: [backbone.body.layer2.3.conv2]
+    -
+      - parents:  [backbone.body.layer2.3.conv2, backbone.body.layer2.3.bn2]
+      - children: [backbone.body.layer2.3.conv3]
+    -
+      - parents:  [backbone.body.layer3.0.conv1, backbone.body.layer3.0.bn1]
+      - children: [backbone.body.layer3.0.conv2]
+    -
+      - parents:  [backbone.body.layer3.0.conv2, backbone.body.layer3.0.bn2]
+      - children: [backbone.body.layer3.0.conv3]
+    -
+      - parents: [
+          backbone.body.layer3.0.conv3, backbone.body.layer3.0.bn3,
+          backbone.body.layer3.0.downsample.0, backbone.body.layer3.0.downsample.1,
+          backbone.body.layer3.1.conv3, backbone.body.layer3.1.bn3,
+          backbone.body.layer3.2.conv3, backbone.body.layer3.2.bn3,
+          backbone.body.layer3.3.conv3, backbone.body.layer3.3.bn3,
+          backbone.body.layer3.4.conv3, backbone.body.layer3.4.bn3,
+          backbone.body.layer3.5.conv3, backbone.body.layer3.5.bn3,
+        ]
+      - children: [
+          backbone.body.layer3.1.conv1,
+          backbone.body.layer3.2.conv1,
+          backbone.body.layer3.3.conv1,
+          backbone.body.layer3.4.conv1,
+          backbone.body.layer3.5.conv1,
+          backbone.body.layer4.0.conv1,
+          backbone.body.layer4.0.downsample.0,
+          backbone.fpn.inner_blocks.2,
+        ]
+    -
+      - parents:  [backbone.body.layer3.1.conv1, backbone.body.layer3.1.bn1]
+      - children: [backbone.body.layer3.1.conv2]
+    -
+      - parents:  [backbone.body.layer3.1.conv2, backbone.body.layer3.1.bn2]
+      - children: [backbone.body.layer3.1.conv3]
+    -
+      - parents:  [backbone.body.layer3.2.conv1, backbone.body.layer3.2.bn1]
+      - children: [backbone.body.layer3.2.conv2]
+    -
+      - parents:  [backbone.body.layer3.2.conv2, backbone.body.layer3.2.bn2]
+      - children: [backbone.body.layer3.2.conv3]
+    -
+      - parents:  [backbone.body.layer3.3.conv1, backbone.body.layer3.3.bn1]
+      - children: [backbone.body.layer3.3.conv2]
+    -
+      - parents:  [backbone.body.layer3.3.conv2, backbone.body.layer3.3.bn2]
+      - children: [backbone.body.layer3.3.conv3]
+    -
+      - parents:  [backbone.body.layer3.4.conv1, backbone.body.layer3.4.bn1]
+      - children: [backbone.body.layer3.4.conv2]
+    -
+      - parents:  [backbone.body.layer3.4.conv2, backbone.body.layer3.4.bn2]
+      - children: [backbone.body.layer3.4.conv3]
+    -
+      - parents:  [backbone.body.layer3.5.conv1, backbone.body.layer3.5.bn1]
+      - children: [backbone.body.layer3.5.conv2]
+    -
+      - parents:  [backbone.body.layer3.5.conv2, backbone.body.layer3.5.bn2]
+      - children: [backbone.body.layer3.5.conv3]
+    -
+      - parents:  [backbone.body.layer4.0.conv1, backbone.body.layer4.0.bn1]
+      - children: [backbone.body.layer4.0.conv2]
+    -
+      - parents:  [backbone.body.layer4.0.conv2, backbone.body.layer4.0.bn2]
+      - children: [backbone.body.layer4.0.conv3]
+    -
+      - parents:  [backbone.body.layer4.1.conv1, backbone.body.layer4.1.bn1]
+      - children: [backbone.body.layer4.1.conv2]
+    -
+      - parents:  [backbone.body.layer4.1.conv2, backbone.body.layer4.1.bn2]
+      - children: [backbone.body.layer4.1.conv3]
+    -
+      - parents:  [backbone.body.layer4.2.conv1, backbone.body.layer4.2.bn1]
+      - children: [backbone.body.layer4.2.conv2]
+    -
+      - parents:  [backbone.body.layer4.2.conv2, backbone.body.layer4.2.bn2]
+      - children: [backbone.body.layer4.2.conv3]
+    -
+      - parents: [
+        backbone.body.layer4.0.conv3, backbone.body.layer4.0.bn3,
+        backbone.body.layer4.0.downsample.0, backbone.body.layer4.0.downsample.1,
+        backbone.body.layer4.1.conv3, backbone.body.layer4.1.bn3,
+        backbone.body.layer4.2.conv3, backbone.body.layer4.2.bn3,
+      ]
+      - children: [
+          backbone.body.layer4.1.conv1,
+          backbone.body.layer4.2.conv1,
+          backbone.fpn.inner_blocks.3,
+          # no fc in maskrcnn!
+        ]
+    - # rpn
+      - parents: [ # lateral connections (1x1)
+          backbone.fpn.inner_blocks.0,
+          backbone.fpn.inner_blocks.1,
+          backbone.fpn.inner_blocks.2,
+          backbone.fpn.inner_blocks.3,
+        ]
+      - children: [
+          backbone.fpn.layer_blocks.0,
+          backbone.fpn.layer_blocks.1,
+          backbone.fpn.layer_blocks.2,
+          backbone.fpn.layer_blocks.3,
+        ]
+    -
+      - parents: [
+          backbone.fpn.layer_blocks.0,
+          backbone.fpn.layer_blocks.1,
+          backbone.fpn.layer_blocks.2,
+          backbone.fpn.layer_blocks.3,
+        ]
+      - children: [
+          roi_heads.box_head.fc6,  # must be treated differently in the code because its inputs are flattened
+          rpn.head.conv,
+          roi_heads.mask_head.mask_fcn1
+        ]
+    -
+      - parents: [rpn.head.conv]
+      - children: [rpn.head.cls_logits, rpn.head.bbox_pred,]
+    -
+      - parents:  [roi_heads.box_head.fc6]
+      - children: [roi_heads.box_head.fc7]
+    -
+      - parents: [roi_heads.box_head.fc7]
+      - children: [roi_heads.box_predictor.bbox_pred, roi_heads.box_predictor.cls_score]
+    - # mask head
+      - parents:  [roi_heads.mask_head.mask_fcn1]
+      - children: [roi_heads.mask_head.mask_fcn2]
+    -
+      - parents:  [roi_heads.mask_head.mask_fcn2]
+      - children: [roi_heads.mask_head.mask_fcn3]
+    -
+      - parents:  [roi_heads.mask_head.mask_fcn3]
+      - children: [roi_heads.mask_head.mask_fcn4]
+    # - # mask predictor -- these two make the tests flaky, probably due to a bug in my convtranspose2d handling
+    #   - parents:  [roi_heads.mask_head.mask_fcn4]
+    #   - children: [roi_heads.mask_predictor.conv5_mask]
+    # -
+    #   - parents:  [roi_heads.mask_predictor.conv5_mask]
+    #   - children: [roi_heads.mask_predictor.mask_fcn_logits]
+
+  permutation_specs:  # Used to override defaults in how we treat permutation groups
+    roi_heads.box_head.fc6:
+      reshape: [1024, 256, 7, 7]   # by default, do not reshape. We reshape this layer to respect parent's structure
+      optimization: ['STOCHASTIC'] # by default, we do greedy + sls. For this layer do SLS only
