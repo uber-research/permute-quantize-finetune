@@ -1,8 +1,8 @@
 # Permute, Quantize, and Fine-tune
 
 This repository contains the source code and compressed models for the paper
-_Permute, Quantize, and Fine-tune: Efficient Compression of Neural Networks_.
-<!-- TODO(julieta) Add link when public -->
+_Permute, Quantize, and Fine-tune: Efficient Compression of Neural Networks_: https://arxiv.org/abs/2010.15703
+
 ![Permutation optimization](./imgs/permutation.png?raw=true)
 
 Our method compresses the weight matrices of the network layers by
@@ -164,12 +164,11 @@ to load and evaluate the appropriate model.
 
 If you use our code, please cite our work:
 
-<!-- TODO(julieta) update when public -->
 ```
 @article{martinez_2020_pqf,
   title={Permute, Quantize, and Fine-tune: Efficient Compression of Neural Networks},
   author={Martinez, Julieta and Shewakramani, Jashan and Liu, Ting Wei and B{\^a}rsan, Ioan Andrei and Zeng, Wenyuan and Urtasun, Raquel},
-  journal={arXiv preprint arXiv:2010.4966},
+  journal={arXiv preprint arXiv:2010.15703},
   year={2020}
 }
 ```
