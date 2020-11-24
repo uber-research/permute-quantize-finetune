@@ -47,7 +47,6 @@ def main():
 
     model_config = config["model"]
     compression_config = model_config["compression_parameters"]
-
     model = get_uncompressed_model(model_config["arch"], pretrained=True).cuda()
 
     if "permutations" in model_config and model_config.get("use_permutations", True):

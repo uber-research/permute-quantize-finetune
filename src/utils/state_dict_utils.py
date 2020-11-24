@@ -22,10 +22,10 @@ except ImportError:
 # fmt: on
 
 
-def _compress_state_dict(original_state_dict: Dict, float16_codebooks: bool = True) -> None:
+def _compress_state_dict(original_state_dict: Dict, float16_codebooks: bool = True) -> Dict:
     """Given an uncompressed state dict, compresses it by
     1. Expressing BatchNorms with just two vectors, and
-    2. Convert codebooks to float16
+    2. Converting codebooks to float16
     These two transformations result in smaller models, and are necessary to match the
     compression ratios of the Bit Goes Down paper.
 
@@ -130,7 +130,7 @@ def _load_compressed_dict(model: torch.nn.Module, state_dict: Dict) -> None:
             module.running_var.fill_(1)
 
 
-def load_state_dict(model: torch.nn.Module, file_path: str) -> None:
+def load_state_dict(model: torch.nn.Module, file_path: str) -> torch.nn.Module:
     """Load a state dict from a given file path into the model.
     If the state dict is compressed, the batchnorm trick will be applied while loading. Otherwise, normal load
 

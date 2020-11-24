@@ -53,10 +53,10 @@ def apply_recursively_to_model(fn: RecursiveReplaceFn, model: torch.nn.Module, p
     """Recursively apply fn on all modules in models
 
     Parameters:
-        models: The models we want to recursively apply fn
         fn: The callback function, it is given the parents, the children, the index of the children,
             the name of the children, and the prefixed name of the children
             It must return a boolean to determine whether we should stop recursing the branch
+        model: The model we want to recursively apply fn to
         prefix: String to build the full name of the model's children (eg `layer1` in `layer1.conv1`)
     """
     get_prefixed_name = prefix_name_lambda(prefix)
@@ -73,7 +73,7 @@ def apply_recursively_to_model(fn: RecursiveReplaceFn, model: torch.nn.Module, p
 
 
 def compress_model(
-    model,
+    model: torch.nn.Module,
     ignored_modules: Union[List[str], Set[str]],
     k: int,
     k_means_n_iters: int,
@@ -82,22 +82,26 @@ def compress_model(
     pw_subvector_size: int,
     large_subvectors: bool,
     layer_specs: Optional[Dict] = None,
-) -> None:
+) -> torch.nn.Module:
     """
     Given a neural network, modify it to its compressed representation with hard codes
       - Linear is replaced with compressed_layers.CompressedLinear
       - Conv2d is replaced with compressed_layers.CompressedConv2d
+      - ConvTranspose2d is replaced with compressed_layers.CompressedConvTranspose2d
+
     Parameters:
         model: Network to compress. This will be modified in-place
         ignored_modules: List or set of submodules that should not be compressed
         k: Number of centroids to use for each compressed codebook
-        fc_subvector_size: Subvector size to use for linear layers
-        pw_subvector_size: Subvector size for point-wise convolutions
-        large_subvectors: Kernel size of K^2 of 2K^2 for conv layers
         k_means_n_iters: Number of iterations of k means to run on each compressed module
             during initialization
         k_means_type: k means type (kmeans, src)
+        fc_subvector_size: Subvector size to use for linear layers
+        pw_subvector_size: Subvector size for point-wise convolutions
+        large_subvectors: Kernel size of K^2 of 2K^2 for conv layers
         layer_specs: Dict with different configurations for individual layers
+    Returns:
+        The passed model, which is now compressed
     """
     if layer_specs is None:
         layer_specs = {}
