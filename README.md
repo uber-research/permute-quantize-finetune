@@ -107,7 +107,7 @@ We also provide a compressed Mask R-CNN model that attains the following results
 
 | Model                 | Size          | Comp. Ratio  | Box AP | Mask AP |
 | :------------         | ------------: | -----------: | -----: | ------: |
-| Original Mask R-CNN   | 169.4 MB      | -            | 37.9   | 35.8    |
+| Original Mask R-CNN   | 169.4 MB      | -            | 37.9   | 34.6    |
 | Compressed Mask R-CNN | 6.65 MB       | 25.5x        | 36.3   | 33.5    |
 
 which you may use as given for evaluation.
